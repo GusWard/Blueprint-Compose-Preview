@@ -8,12 +8,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -277,7 +275,7 @@ private fun PassiveBlueprintItemOverlay(itemData: BlueprintItemData, backgroundA
             }
         }
 
-        if (itemSize.width > (itemSize.height * 2.5)) {
+        if (itemSize.width > (itemSize.height * 2)) {
             Row(
                 modifier = Modifier
                     .background(SemanticColors.BlueprintBackground.copy(alpha = 1f))
@@ -289,18 +287,11 @@ private fun PassiveBlueprintItemOverlay(itemData: BlueprintItemData, backgroundA
                 Text(
                     fontSize = fontSize,
                     color = Color.White.copy(alpha = 1f),
-                    fontWeight = FontWeight.Bold,
-                    text = itemData.label,
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    fontSize = fontSize * 0.9f,
-                    color = Color.White.copy(alpha = 0.9f),
                     fontWeight = FontWeight.Medium,
                     text = density.run {
                         val width = decimalFormat.format(itemSize.width.toDp().value)
                         val height = decimalFormat.format(itemSize.height.toDp().value)
-                        "(${width}x${height})"
+                        "${width}x${height}"
                     },
                 )
             }
@@ -316,12 +307,6 @@ private fun PassiveBlueprintItemOverlay(itemData: BlueprintItemData, backgroundA
                 Text(
                     fontSize = fontSize,
                     color = Color.White.copy(alpha = 1f),
-                    fontWeight = FontWeight.Bold,
-                    text = itemData.label,
-                )
-                Text(
-                    fontSize = fontSize * 0.8f,
-                    color = Color.White.copy(alpha = 0.8f),
                     fontWeight = FontWeight.Medium,
                     text = density.run {
                         val width = decimalFormat.format(itemSize.width.toDp().value)
