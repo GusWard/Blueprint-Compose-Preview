@@ -66,7 +66,7 @@ internal fun BlueprintGrid(
     val density = LocalDensity.current
 
     Box(
-        modifier = Modifier.fillMaxSize().background(uk.co.gusward.blueprint.compose.preview.constants.SemanticColors.BlueprintBackground)
+        modifier = Modifier.fillMaxSize().background(uk.co.gusward.blueprint.compose.preview.constants.SemanticColors.BlueprintBackground.copy(alpha = alpha))
     ) {
         val compositeKey = currentCompositeKeyHashCode
         var size by remember { mutableStateOf(staticGridSizeCache[compositeKey] ?: Size.Zero) }
