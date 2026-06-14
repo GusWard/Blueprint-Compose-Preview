@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("maven-publish")
+    id("com.gradleup.nmcp")
     id("signing")
 }
 
@@ -80,19 +81,6 @@ publishing {
             }
         }
     }
-    
-    repositories {
-        maven {
-            name = "OSSRH"
-            val releasesRepoUrl = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
-            val snapshotsRepoUrl = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
-            url = if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl
-            credentials {
-                username = project.findProperty("ossrhUsername") as String?
-                password = project.findProperty("ossrhPassword") as String?
-            }
-        }
-    }
 }
 
 signing {
@@ -105,3 +93,11 @@ dependencies {
     implementation("androidx.compose.runtime:runtime")
     implementation("androidx.compose.ui:ui")
 }
+nmcp {
+    publish("release") {
+        username = project.findProperty("ossrhUsername") as String?
+        password = project.findProperty("ossrhPassword") as String?
+        publicationType = "USER_MANAGED"
+    }
+}
+
