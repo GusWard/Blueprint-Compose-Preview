@@ -12,10 +12,10 @@ version = "1.0.0"
 
 android {
     namespace = "uk.co.gusward.blueprint.compose.preview.noop"
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
-        minSdk = 28
+        minSdk = 21
     }
 
     buildTypes {
