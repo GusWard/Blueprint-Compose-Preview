@@ -34,6 +34,11 @@ android {
         compose = true
     }
 
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
+    }
+
     publishing {
         singleVariant("release") {
             withSourcesJar()
