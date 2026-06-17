@@ -1,5 +1,8 @@
 package uk.co.gusward.blueprint.compose.preview.preview
 
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import android.view.View
 import android.view.ViewTreeObserver
 import androidx.compose.foundation.Canvas
@@ -65,10 +68,34 @@ private val staticBlueprintCache = object : LinkedHashMap<Long, Map<String, Blue
 
 @Composable
 fun BlueprintPreview(
+    enabled: Boolean = true,
     backgroundAlpha: Float = 1f,
     contentAlpha: Float = 1f,
     showInternalItems: Boolean = false,
+    refreshIntervalMs: Long = 0L,
     content: @Composable () -> Unit
+) {
+    if (!enabled) {
+        content()
+        return
+    }
+
+    BlueprintInternal(
+        backgroundAlpha = backgroundAlpha,
+        showInternalItems = showInternalItems,
+        refreshIntervalMs = refreshIntervalMs,
+        contentAlpha = contentAlpha,
+        content = content,
+    )
+}
+
+@Composable
+private fun BlueprintInternal(
+    backgroundAlpha: Float,
+    showInternalItems: Boolean,
+    refreshIntervalMs: Long,
+    contentAlpha: Float,
+    content: @Composable (() -> Unit)
 ) {
     BlueprintTheme(backgroundAlpha = backgroundAlpha) {
         val compositeKey = currentCompositeKeyHashCode
@@ -97,6 +124,44 @@ fun BlueprintPreview(
             view.viewTreeObserver.addOnGlobalLayoutListener(listener)
             onDispose {
                 view.viewTreeObserver.removeOnGlobalLayoutListener(listener)
+            }
+        }
+
+        // LIVE ON DEVICE: re-extract on every draw pass so the overlay tracks Compose
+        // recompositions/relayouts that don't trigger an Android global-layout pass
+        // (text, toggles, colours, animations, internal resizes). Idle-free: no draw -> no callback.
+        // Inspection mode keeps the synchronous path below instead.
+        // NOTE: partly overlaps the global-layout listener and the empty-state pre-draw fallback;
+        // kept separate to minimise the diff.
+        DisposableEffect(view, showInternalItems, isInspectionMode, refreshIntervalMs) {
+            if (isInspectionMode) {
+                onDispose { }
+            } else {
+                val handler = Handler(Looper.getMainLooper())
+                val extract = Runnable {
+                    try {
+                        val newMap = extractBlueprintItemsFromSemantics(view, showInternalItems)
+                        if (newMap.isNotEmpty() && newMap != blueprintItemDataState) {
+                            blueprintItemDataState = newMap
+                            staticBlueprintCache[compositeKey] = newMap
+                        }
+                    } catch (e: Exception) {
+                        Log.e("PassiveBlueprint", "Live extraction failed", e)
+                    }
+                }
+                val listener = ViewTreeObserver.OnPreDrawListener {
+                    // Debounce: a pre-draw means the layout may have changed, so schedule a
+                    // re-extraction after refreshIntervalMs. Cancel any extraction already
+                    // scheduled by an earlier pre-draw so we only re-render once draws settle.
+                    handler.removeCallbacks(extract)
+                    handler.postDelayed(extract, refreshIntervalMs.coerceAtLeast(0L))
+                    true
+                }
+                view.viewTreeObserver.addOnPreDrawListener(listener)
+                onDispose {
+                    view.viewTreeObserver.removeOnPreDrawListener(listener)
+                    handler.removeCallbacks(extract)
+                }
             }
         }
 
@@ -181,8 +246,8 @@ fun BlueprintPreview(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .semantics { 
-                                testTag = "blueprint_internal_overlay" 
+                            .semantics {
+                                testTag = "blueprint_internal_overlay"
                             }
                     ) {
                         blueprintItemDataState.values.forEach { item ->
@@ -244,7 +309,7 @@ private fun PassiveBlueprintItemOverlay(itemData: BlueprintItemData, backgroundA
         var fontSize = 12.sp
         var vPadding = 2.dp
         var hPadding = 2.dp
-        
+
         val fullHeightNeeded = 26.dp
         val textOnlyHeight = 18.dp
         val fullWidthNeeded = 60.dp
@@ -337,7 +402,7 @@ private val suppressedNodes = mutableSetOf<Int>()
 
 internal fun extractBlueprintItemsFromSemantics(view: View, showInternalItems: Boolean = true): Map<String, BlueprintItemData> {
     val items = mutableMapOf<String, BlueprintItemData>()
-    suppressedNodes.clear() 
+    suppressedNodes.clear()
 
     val screenSize = Size(view.width.toFloat(), view.height.toFloat())
 
@@ -363,13 +428,13 @@ internal fun extractBlueprintItemsFromSemantics(view: View, showInternalItems: B
                 semanticsOwner.rootSemanticsNode
             }
             traverseSemanticsNode(rootNode, items, screenSize)
-            
+
             return if (showInternalItems) {
                 items
             } else {
                 items.filter { entry ->
                     val currentItem = entry.value
-                    items.values.none { other -> 
+                    items.values.none { other ->
                         other != currentItem && other.contains(currentItem)
                     }
                 }
@@ -405,13 +470,13 @@ internal fun extractBlueprintItemsFromSemantics(view: View, showInternalItems: B
             android.util.Log.e("PassiveBlueprint", "Fallback extraction failed", ex)
         }
     }
-    
+
     return if (showInternalItems) {
         items
     } else {
         items.filter { entry ->
             val currentItem = entry.value
-            items.values.none { other -> 
+            items.values.none { other ->
                 other != currentItem && other.contains(currentItem)
             }
         }
@@ -421,7 +486,7 @@ internal fun extractBlueprintItemsFromSemantics(view: View, showInternalItems: B
 internal fun traverseSemanticsNode(node: androidx.compose.ui.semantics.SemanticsNode, items: MutableMap<String, BlueprintItemData>, screenSize: Size) {
     try {
         val id = node.id
-        
+
         val config = node.config
 
         // Pre-determine interactivity to decide which bounds to use
@@ -431,17 +496,17 @@ internal fun traverseSemanticsNode(node: androidx.compose.ui.semantics.Semantics
         val hasToggleState = config.contains(SemanticsProperties.ToggleableState)
         val isSlider = config.contains(SemanticsProperties.ProgressBarRangeInfo)
 
-        val isRecognizedInteractive = role == Role.Button || 
-                                      role == Role.Checkbox || 
-                                      role == Role.Switch || 
-                                      role == Role.RadioButton || 
-                                      isEditableText || 
+        val isRecognizedInteractive = role == Role.Button ||
+                                      role == Role.Checkbox ||
+                                      role == Role.Switch ||
+                                      role == Role.RadioButton ||
+                                      isEditableText ||
                                       hasToggleState ||
                                       hasClickAction ||
                                       isSlider
 
         val layoutInfo = node.layoutInfo
-        
+
         // TextFields and Sliders visually occupy their full container size, so they need outer bounds.
         // Other interactive elements (Button, Switch, Checkbox) have invisible minimum touch targets (48dp),
         // so we use inner bounds for them.
@@ -502,7 +567,7 @@ internal fun traverseSemanticsNode(node: androidx.compose.ui.semantics.Semantics
             cc.contains(SemanticsProperties.ProgressBarRangeInfo) ||
             cc.contains(SemanticsActions.OnClick)
         }
-        
+
         // Ignore "The Stage" - if a molecule occupies nearly the full screen, it's just a background container
         val isTheStage = if (hasVisualIdentity) {
             val nodeArea = bounds.width * bounds.height
@@ -512,7 +577,7 @@ internal fun traverseSemanticsNode(node: androidx.compose.ui.semantics.Semantics
 
         var label = "Node $id"
         var hasExplicitLabel = false
-        
+
         // Priority 1: TestTag (includes blueprintId) - Developers use this for explicit naming
         val testTag = config.getOrNull(SemanticsProperties.TestTag)
         if (testTag != null) {
@@ -577,11 +642,11 @@ internal fun traverseSemanticsNode(node: androidx.compose.ui.semantics.Semantics
         // Priority 5: Molecule Detection (Layouts with Background + SDK children)
         if (!hasExplicitLabel && hasVisualIdentity && hasSdkChildren && !isTheStage) {
             hasExplicitLabel = true
-            
+
             // Try to find a hint for the label from the first text child
             val titleChildText = node.children.firstOrNull { it.config.contains(SemanticsProperties.Text) }
                 ?.config?.getOrNull(SemanticsProperties.Text)?.firstOrNull()?.toString()
-                
+
             label = if (titleChildText != null) {
                 val cleaned = if (titleChildText.length > 12) titleChildText.take(12) + "..." else titleChildText
                 "$cleaned Container"
@@ -615,7 +680,7 @@ internal fun traverseSemanticsNode(node: androidx.compose.ui.semantics.Semantics
             val roundedTop = kotlin.math.round(bounds.top * 10f) / 10f
             val roundedWidth = kotlin.math.round(bounds.width * 10f) / 10f
             val roundedHeight = kotlin.math.round(bounds.height * 10f) / 10f
-            
+
             items[id.toString()] = BlueprintItemData(
                 id = id.toString(),
                 label = label,
