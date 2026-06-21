@@ -10,10 +10,12 @@ import androidx.compose.ui.graphics.Color
  */
 @Composable
 fun BlueprintPreview(
+    enabled: Boolean = true,
     modifier: Modifier = Modifier,
     backgroundAlpha: Float = 1.0f,
     contentAlpha: Float = 1.0f,
     gridColor: Color = Color.Unspecified,
+    refreshIntervalMs: Long = 0L,
     content: @Composable () -> Unit
 ) {
     // Simply emit the content in the no-op version
