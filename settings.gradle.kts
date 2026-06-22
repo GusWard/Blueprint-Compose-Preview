@@ -1,4 +1,7 @@
 pluginManagement {
+    includeBuild("blueprint-report-gradle") {
+        name = "blueprint-report-gradle-plugin"
+    }
     repositories {
         google()
         mavenCentral()
@@ -17,3 +20,5 @@ rootProject.name = "Blueprint"
 include(":blueprint-compose-preview")
 include(":blueprint-compose-preview-no-op")
 include(":example")
+include(":blueprint-report-ksp")
+include(":blueprint-report-gradle")

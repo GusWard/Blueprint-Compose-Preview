@@ -2,6 +2,7 @@ plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("uk.co.gusward.blueprint-report")
 }
 
 android {
@@ -34,6 +35,14 @@ android {
     buildFeatures {
         compose = true
     }
+}
+
+blueprintReport {
+    fqn("uk.co.gusward.example.compose.*")
+    fqn("uk.co.gusward.example.logo.*")
+
+    backgroundAlpha = 0.5f
+    contentAlpha = 0.7f
 }
 
 dependencies {
