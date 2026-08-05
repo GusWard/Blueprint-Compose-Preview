@@ -36,7 +36,7 @@ Thought it would be nice to add some quick background on the roots of this littl
 
 I started the idea a couple years ago, and wrote all of the blueprint measurement and rendering logic by hand before LLM agents became part of my daily dev work.
 
-Originally it worked by the user / dev wrapping every component with a `BlueprintItem {}`, which allowed the grid to easily find and render it. This worked and it looked great! But I knew the extra dev friction would make it annoying to use. I also knew the tree parsing logic to make it passive would take a while to perfect, and to be honest it sounded boring, so I parked it.
+Originally it worked by the user / dev wrapping every component with a `BlueprintItem {}`, which allowed the grid to easily find and render it. This worked and it looked great! But I knew the extra dev friction would make it annoying to use. I also knew the tree parsing logic to make it passive would take a while to perfect, and life got in the way, so I parked it.
 
 Recently with the help of Gemini I revived the project, enabling me to very quickly add the dense tree parsing logic to make the blueprint a completely passive one-liner.
 
