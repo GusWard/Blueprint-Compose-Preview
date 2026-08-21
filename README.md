@@ -10,9 +10,13 @@ Blueprint Preview is a dev tool for Jetpack Compose that shows you a "blueprint"
 
 ```kotlin
 dependencies {
+    // Android
     debugImplementation("uk.co.gusward:blueprint-compose-preview:1.0.1")
     // Optional (unless blueprint is used in prod code)
     releaseImplementation("uk.co.gusward:blueprint-compose-preview-no-op:1.0.1")
+    
+    // Multiplatform
+    implementation("uk.co.gusward:blueprint-compose-preview-multiplatform:1.0.1")
 }
 ```
 
@@ -63,6 +67,8 @@ Hope you find it useful! (the rest of this readme was written by AI haha)
 
 ## Installation
 
+### Android
+
 Add the dependency to your `build.gradle.kts` file:
 
 ```kotlin
@@ -73,6 +79,26 @@ dependencies {
 ```
 
 *Note: It is recommended to use `debugImplementation` as this is a development-only tool.*
+
+### Compose Multiplatform
+
+Blueprint Preview also supports Compose Multiplatform projects (Android, Desktop, and iOS).
+
+Because Kotlin Multiplatform doesn't have a direct equivalent to `debugImplementation` for all targets in `commonMain`, you can configure it based on a custom gradle property (e.g. `isReleaseBuild`) or apply it directly in your platform-specific source sets.
+
+```kotlin
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            if (project.hasProperty("isReleaseBuild")) {
+                implementation("uk.co.gusward:blueprint-compose-preview-multiplatform-no-op:1.0.1")
+            } else {
+                implementation("uk.co.gusward:blueprint-compose-preview-multiplatform:1.0.1")
+            }
+        }
+    }
+}
+```
 
 ## Usage
 
